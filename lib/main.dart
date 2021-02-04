@@ -17,10 +17,16 @@ class ImagemSlides extends StatefulWidget {
   _ImagemSlidesState createState() => _ImagemSlidesState();
 }
 
-class _ImagemSlidesState extends State<ImagemSlides> {
+class _ImagemSlidesState extends State<ImagemSlides>
+    with SingleTickerProviderStateMixin {
   String img1 = "images/pic1.jpg";
   String img2 = "images/pic2.jpg";
   String img3 = "images/pic3.jpg";
+
+  double opacityImage = 0;
+  AnimationController _controller;
+  Animation _animation;
+  Timer timer;
 
   next() {
     String aux;
@@ -32,10 +38,12 @@ class _ImagemSlidesState extends State<ImagemSlides> {
     aux = img2;
     img2 = img3;
     img3 = aux;
+    _controller.forward();
   }
 
   before() {
     String aux;
+
     aux = img2;
     img2 = img1;
     img1 = aux;
@@ -43,19 +51,43 @@ class _ImagemSlidesState extends State<ImagemSlides> {
     aux = img2;
     img2 = img3;
     img3 = aux;
+
+    _controller.forward();
   }
 
   @override
   void initState() {
     // TODO: implement initState
 
-    Timer timer = new Timer.periodic(new Duration(seconds: 3), (timer) {
-      setState(() {
-        next();
+    initTimer();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+    _animation = Tween(begin: 0.0, end: 1.0).animate(_controller);
+    _controller.forward();
+    super.initState();
+  }
+
+  initTimer(){
+    if(timer != null && timer.isActive) timer.cancel();
+    timer = new Timer.periodic(new Duration(milliseconds: 4500), (timer) {
+      _controller.reverse();
+      Timer(new Duration(milliseconds: 700), () {
+        setState(() {
+          next();
+        });
       });
     });
+  }
 
-    super.initState();
+  imageSlide(String img, int flexValue) {
+    return Expanded(
+        flex: flexValue,
+        child: FadeTransition(
+          opacity: _animation,
+          child: Image.asset(img),
+        ));
   }
 
   @override
@@ -67,28 +99,29 @@ class _ImagemSlidesState extends State<ImagemSlides> {
           child: IconButton(
             icon: Icon(Icons.navigate_before),
             onPressed: () {
-              setState(() {
-                before();
+              _controller.reverse();
+              Timer(new Duration(milliseconds: 700), () {
+                setState(() {
+                  before();
+                  initTimer();
+                });
               });
             },
           ),
         ),
-        Expanded(
-          child: Image.asset(img1),
-        ),
-        Expanded(
-          flex: 2,
-          child: Image.asset(img2),
-        ),
-        Expanded(
-          child: Image.asset(img3),
-        ),
+        imageSlide(img1, 1),
+        imageSlide(img2, 2),
+        imageSlide(img3, 1),
         Container(
           child: IconButton(
             icon: Icon(Icons.navigate_next),
             onPressed: () {
-              setState(() {
-                next();
+              _controller.reverse();
+              Timer(new Duration(milliseconds: 700), () {
+                setState(() {
+                  next();
+                  initTimer();                  
+                });
               });
             },
           ),
